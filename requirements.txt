@@ -1,0 +1,7 @@
+opencv-python-headless
+google-generativeai
+xlsxwriter
+numpy
+pandas
+streamlit
+matplotlib
