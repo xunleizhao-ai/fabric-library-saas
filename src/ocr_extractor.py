@@ -1,15 +1,18 @@
-import os
 import google.generativeai as genai
 import PIL.Image
 import json
 import time
+import cv2
+import streamlit as st
 
 # =========================================================================
-# AI Setup (using environment variable for API key)
+# AI Setup (using st.secrets for API key)
 # =========================================================================
-API_KEY = os.getenv("GOOGLE_API_KEY")
-if not API_KEY:
-    raise ValueError("GOOGLE_API_KEY environment variable not set.")
+try:
+    API_KEY = st.secrets["GOOGLE_API_KEY"]
+except KeyError:
+    st.error("Gemini API key not found in Streamlit secrets. Please add it to your `secrets.toml` file or Hugging Face Space secrets.")
+    st.stop() # Stop the app if API key is not available
 genai.configure(api_key=API_KEY)
 
 def get_ai_model():
@@ -58,7 +61,11 @@ def extract_fabric_data(sticker_image_array, retries=3, delay_429=30, delay_erro
         dict: A dictionary containing 'Brand', 'Item', and 'Content', or empty strings if extraction fails.
     """
     ai_data = {"Brand": "", "Item": "", "Content": ""}
-    pil_sticker = PIL.Image.fromarray(cv2.cvtColor(sticker_image_array, cv2.COLOR_BGR2RGB))
+    try:
+        pil_sticker = PIL.Image.fromarray(cv2.cvtColor(sticker_image_array, cv2.COLOR_BGR2RGB))
+    except NameError:
+        print("[CRITICAL ERROR]: cv2 is not defined inside extract_fabric_data. Please ensure opencv-python-headless is installed and cv2 is properly imported.")
+        raise # Re-raise to halt execution and show the error.
 
     for attempt in range(retries):
         try:

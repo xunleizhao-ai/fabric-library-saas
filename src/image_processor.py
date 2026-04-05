@@ -1,21 +1,17 @@
 import cv2
 import numpy as np
 
-# =========================================================================
-# 🛠️ THE CROP DIALS (tuned from Colab)
-# =========================================================================
-WHITE_THRESHOLD = 200
-MIN_STICKER_AREA = 5000
-JUMP_DOWN_PIXELS = 20
-SWATCH_SQUARE_SIZE = 300
-
-def find_stickers_and_swatches(image_array):
+def find_stickers_and_swatches(image_array, white_threshold=200, min_sticker_area=5000, jump_down_pixels=20, swatch_square_size=300):
     """
     Detects stickers and crops corresponding fabric swatches from an image.
     Handles multiple stickers per image.
 
     Args:
         image_array (np.array): The input image as a NumPy array (BGR format).
+        white_threshold (int): Threshold for white areas.
+        min_sticker_area (int): Minimum area for a detected sticker.
+        jump_down_pixels (int): Pixels to jump down from sticker to find swatch.
+        swatch_square_size (int): Size of the square fabric swatch.
 
     Returns:
         tuple: A tuple containing:
@@ -30,17 +26,14 @@ def find_stickers_and_swatches(image_array):
     
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.GaussianBlur(gray, (15, 15), 0)
-    _, thresh = cv2.threshold(blurred, WHITE_THRESHOLD, 255, cv2.THRESH_BINARY)
+    _, thresh = cv2.threshold(blurred, white_threshold, 255, cv2.THRESH_BINARY)
     
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (15, 15), 0)
-    _, thresh = cv2.threshold(blurred, WHITE_THRESHOLD, 255, cv2.THRESH_BINARY)
     contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     valid_stickers = []
     for cnt in contours:
         area = cv2.contourArea(cnt)
-        if area > MIN_STICKER_AREA:
+        if area > min_sticker_area:
             x, y, w, h = cv2.boundingRect(cnt)
             # Filter for typically rectangular stickers (e.g., width significantly greater than height)
             if w > h * 1.5: 
@@ -61,10 +54,10 @@ def find_stickers_and_swatches(image_array):
         sticker_bottom_y = sy + sh
         sticker_center_x = sx + (sw // 2)
 
-        fab_y1 = sticker_bottom_y + JUMP_DOWN_PIXELS
-        fab_y2 = min(img.shape[0], fab_y1 + SWATCH_SQUARE_SIZE)
-        fab_x1 = max(0, sticker_center_x - (SWATCH_SQUARE_SIZE // 2))
-        fab_x2 = min(img.shape[1], fab_x1 + SWATCH_SQUARE_SIZE)
+        fab_y1 = sticker_bottom_y + jump_down_pixels
+        fab_y2 = min(img.shape[0], fab_y1 + swatch_square_size)
+        fab_x1 = max(0, sticker_center_x - (swatch_square_size // 2))
+        fab_x2 = min(img.shape[1], fab_x1 + swatch_square_size)
 
         swatch_crop = img[fab_y1:fab_y2, fab_x1:fab_x2]
 
